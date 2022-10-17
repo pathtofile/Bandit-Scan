@@ -69,7 +69,26 @@ def main():
                 out_folder = os.path.join(tmpdirname, "out")
                 if package_filename.endswith(".tar.gz"):
                     with tarfile.open(package_filename, "r:gz") as ft:
-                        ft.extractall(path=out_folder)
+                        def is_within_directory(directory, target):
+                            
+                            abs_directory = os.path.abspath(directory)
+                            abs_target = os.path.abspath(target)
+                        
+                            prefix = os.path.commonprefix([abs_directory, abs_target])
+                            
+                            return prefix == abs_directory
+                        
+                        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                        
+                            for member in tar.getmembers():
+                                member_path = os.path.join(path, member.name)
+                                if not is_within_directory(path, member_path):
+                                    raise Exception("Attempted Path Traversal in Tar File")
+                        
+                            tar.extractall(path, members, numeric_owner=numeric_owner) 
+                            
+                        
+                        safe_extract(ft, path=out_folder)
                 elif package_filename.endswith(".whl") or package_url.endswith(
                         ".zip"):
                     with zipfile.ZipFile(package_filename, "r") as fz:
